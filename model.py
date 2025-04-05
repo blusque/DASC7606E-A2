@@ -1,3 +1,5 @@
+from constants import MODEL_CHECKPOINT, ID_TO_LABEL, LABEL_TO_ID
+
 def initialize_model():
     """
     Initialize a model for token classification.
@@ -21,3 +23,13 @@ def initialize_model():
     ref: https://huggingface.co/transformers/main_classes/trainer.html#transformers.Trainer
     """
     # Write your code here.
+    from transformers import AutoModelForTokenClassification
+
+    model = AutoModelForTokenClassification.from_pretrained(
+        pretrained_model_name_or_path=MODEL_CHECKPOINT,
+        num_labels=len(LABEL_TO_ID),  # Ensure the number of labels matches LABEL_TO_ID
+        id2label=ID_TO_LABEL,
+        label2id=LABEL_TO_ID,
+    )
+
+    return model

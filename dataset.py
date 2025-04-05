@@ -1,4 +1,6 @@
+from datasets import load_dataset
 from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict
+from pprint import pprint
 
 
 def align_labels_with_tokens(
@@ -77,7 +79,16 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
         raw_datasets["test"] = load_dataset('tomaarsen/MultiCoNER', 'multi', split="test")
     """
     # Write your code here.
-    raw_datasets["test"] = load_dataset('tomaarsen/MultiCoNER', 'multi', split="test")
+    raw_datasets = load_dataset('tomaarsen/MultiCoNER', 'multi')
+    pprint(raw_datasets)
+    # raw_datasets["test"] = load_dataset('tomaarsen/MultiCoNER', 'multi', split="test")
+
+    # if 'validation' not in raw_datasets.keys():
+    #     split_dataset = raw_datasets['train'].copy()  # Make a copy of the train dataset to avoid modifying the original
+
+    #     split_data
+    #     raw_datasets['validation'] = raw_datasets['train'].train_test_split(test_size=0.1)
+        
 
 
 def preprocess_data(raw_datasets: DatasetDict, tokenizer) -> DatasetDict:
