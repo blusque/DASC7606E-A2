@@ -1,7 +1,7 @@
 import evaluate
 from transformers.trainer_utils import EvalPrediction
 import numpy as np
-from constants import LABEL_TO_ID
+from constants import ID_TO_LABEL
 
 metric_evaluator = evaluate.load("seqeval")
 
@@ -28,11 +28,11 @@ def compute_metrics(eval_predictions: EvalPrediction) -> dict[str, float]:
     predictions = np.argmax(predictions, axis=2)  # Get the predicted class indices
     # Remove ignored index (special tokens)
     true_predictions = [
-        [LABEL_TO_ID.keys()[p] for (p, l) in zip(prediction, label) if l != -100]
+        [ID_TO_LABEL[p] for (p, l) in zip(prediction, label) if l != -100]
         for (prediction, label) in zip(predictions, labels)
     ]
     true_labels = [
-        [LABEL_TO_ID.keys()[l] for (p, l) in zip(prediction, label) if l != -100]
+        [ID_TO_LABEL[l] for (p, l) in zip(prediction, label) if l != -100]
         for (prediction, label) in zip(predictions, labels)
     ]
     
