@@ -13,3 +13,4 @@ def initialize_tokenizer() -> PreTrainedTokenizer | PreTrainedTokenizerFast:
     # But make sure the tokenizer is the same as the model.
     """
     tokenizer = AutoTokenizer.from_pretrained(MODEL_CHECKPOINT)
+    return tokenizer
