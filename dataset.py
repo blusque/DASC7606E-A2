@@ -23,6 +23,21 @@ def align_labels_with_tokens(
         A list of aligned labels.
     """
     # Write your code here.
+    previous_word_idx = None
+
+    label_ids = []
+    for word_idx in word_ids:
+        # Special tokens have a word id that is None. We set the label to -100 so they are ignored in loss
+        if word_idx is None:
+            label_ids.append(-100)
+        elif previous_word_idx is None or word_idx != previous_word_idx:
+            # Start of a new word
+            label_ids.append(labels[word_idx])
+        else:
+            # Continuing the same word, repeat the previous label
+            label_ids.append(labels[previous_word_idx])
+        previous_word_idx = word_idx
+    return label_ids
 
 
 def tokenize_and_align_labels(examples: dict, tokenizer) -> dict:
@@ -80,14 +95,12 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     """
     # Write your code here.
     raw_datasets = load_dataset('tomaarsen/MultiCoNER', 'multi')
-    pprint(raw_datasets)
-    # raw_datasets["test"] = load_dataset('tomaarsen/MultiCoNER', 'multi', split="test")
-
-    # if 'validation' not in raw_datasets.keys():
-    #     split_dataset = raw_datasets['train'].copy()  # Make a copy of the train dataset to avoid modifying the original
-
-    #     split_data
-    #     raw_datasets['validation'] = raw_datasets['train'].train_test_split(test_size=0.1)
+    if 'validation' not in raw_datasets.keys():
+        # If validation split is not present, create it from the train split
+        split_dataset = raw_datasets['train'].train_test_split(test_size=0.1)
+        raw_datasets['train'] = split_dataset['train']
+        raw_datasets['validation'] = split_dataset['test']
+    return raw_datasets
         
 
 

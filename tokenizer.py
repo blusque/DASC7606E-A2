@@ -12,7 +12,4 @@ def initialize_tokenizer() -> PreTrainedTokenizer | PreTrainedTokenizerFast:
     NOTE: Below is an example of how to initialize a tokenizer for token classification. You are free to change this.
     # But make sure the tokenizer is the same as the model.
     """
-    tokenizer: PreTrainedTokenizer | PreTrainedTokenizerFast = AutoTokenizer.from_pretrained(
-        pretrained_model_name_or_path=MODEL_CHECKPOINT
-    )
-    return tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_CHECKPOINT)
