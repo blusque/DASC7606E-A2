@@ -30,6 +30,7 @@ def initialize_model():
         num_labels=len(LABEL_TO_ID),  # Ensure the number of labels matches LABEL_TO_ID
         id2label=ID_TO_LABEL,
         label2id=LABEL_TO_ID,
+        ignore_mismatched_sizes=True,  # Ignore size mismatches
     )
 
     return model
