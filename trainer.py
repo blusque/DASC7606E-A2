@@ -2,6 +2,68 @@ from transformers import DataCollatorForTokenClassification, Trainer, TrainingAr
 
 from constants import OUTPUT_DIR
 from evaluation import compute_metrics
+from typing import Any, Optional, Union
+
+class NERTrainer(Trainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.wandb_run = None
+        if self.args.wandb:
+            self.init_wandb()
+    
+    def log(self, logs: dict, *args, **kwargs):
+        if self.wandb_run is not None:
+            self.wandb_run.log(logs)
+        super().log(logs, *args, **kwargs)
+
+    def init_wandb(self):
+        import wandb
+        self.wandb_run = wandb.init(
+            project="NER",
+            name=self.args.run_name,
+            config=self.args.to_dict(),
+            dir=self.args.output_dir,
+            reinit=True,
+        )
+
+    def train(
+            self,
+            resume_from_checkpoint: Optional[Union[str, bool]]=None,
+            trial=None,
+            ignore_keys_for_eval: Optional[list[str]]=None,
+            **kwargs,
+        ):
+        if self.wandb_run is not None:
+            self.wandb_run.watch(self.model, log="all", log_graph=True)
+        super().train(resume_from_checkpoint, trial, ignore_keys_for_eval, **kwargs)
+        if self.wandb_run is not None:
+            self.wandb_run.finish()
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        """
+        Compute the loss for the model.
+
+        Args:
+            model: Model for token classification.
+            inputs: Inputs to the model.
+            return_outputs: Whether to return the outputs.
+
+        Returns:
+            Loss and optionally the outputs of the model.
+        """
+        # Unpack inputs
+        labels = inputs.pop("labels")
+        
+        # Forward pass
+        outputs = model(**inputs)
+        
+        # Compute loss
+        loss = outputs.loss
+        
+        if return_outputs:
+            return (loss, outputs)
+        
+        return loss
 
 
 def create_training_arguments() -> TrainingArguments:
@@ -27,7 +89,7 @@ def create_training_arguments() -> TrainingArguments:
         learning_rate=2e-5,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=16,
-        num_train_epochs=6,
+        num_train_epochs=12,
         weight_decay=0.01,
         save_total_limit=2
     )
@@ -51,7 +113,7 @@ def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
 
     training_args: TrainingArguments = create_training_arguments()
 
-    return Trainer(
+    return NERTrainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
@@ -59,4 +121,6 @@ def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
         data_collator=data_collator,
         compute_metrics=compute_metrics,
         processing_class=tokenizer,
+        wandb=True,
+        run_name="NER-Training"
     )

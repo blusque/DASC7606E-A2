@@ -6,6 +6,9 @@ from tokenizer import initialize_tokenizer
 from trainer import build_trainer
 from utils import not_change_test_dataset, set_random_seeds
 
+# os.environ["WANDB_DISABLED"] = "true"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 
 def main():
     """
