@@ -3,28 +3,11 @@ from transformers import DataCollatorForTokenClassification, Trainer, TrainingAr
 from constants import OUTPUT_DIR
 from evaluation import compute_metrics
 from typing import Any, Optional, Union
+import wandb
 
 class NERTrainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.wandb_run = None
-        if self.args.wandb:
-            self.init_wandb()
-    
-    def log(self, logs: dict, *args, **kwargs):
-        if self.wandb_run is not None:
-            self.wandb_run.log(logs)
-        super().log(logs, *args, **kwargs)
-
-    def init_wandb(self):
-        import wandb
-        self.wandb_run = wandb.init(
-            project="NER",
-            name=self.args.run_name,
-            config=self.args.to_dict(),
-            dir=self.args.output_dir,
-            reinit=True,
-        )
 
     def train(
             self,
@@ -33,13 +16,9 @@ class NERTrainer(Trainer):
             ignore_keys_for_eval: Optional[list[str]]=None,
             **kwargs,
         ):
-        if self.wandb_run is not None:
-            self.wandb_run.watch(self.model, log="all", log_graph=True)
         super().train(resume_from_checkpoint, trial, ignore_keys_for_eval, **kwargs)
-        if self.wandb_run is not None:
-            self.wandb_run.finish()
 
-    def compute_loss(self, model, inputs, return_outputs=False):
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         """
         Compute the loss for the model.
 
@@ -52,8 +31,13 @@ class NERTrainer(Trainer):
             Loss and optionally the outputs of the model.
         """
         # Unpack inputs
-        labels = inputs.pop("labels")
+        # labels = inputs.pop("labels")
         
+        if self.model_accepts_loss_kwargs:
+            loss_kwargs = {}
+            if num_items_in_batch is not None:
+                loss_kwargs["num_items_in_batch"] = num_items_in_batch
+            inputs = {**inputs, **loss_kwargs}
         # Forward pass
         outputs = model(**inputs)
         
@@ -66,7 +50,7 @@ class NERTrainer(Trainer):
         return loss
 
 
-def create_training_arguments() -> TrainingArguments:
+def create_training_arguments(config) -> TrainingArguments:
     """
     Create and return the training arguments for the model.
 
@@ -86,18 +70,24 @@ def create_training_arguments() -> TrainingArguments:
         push_to_hub=False,
         eval_strategy="epoch",
         save_strategy="epoch",  # Save the model every epoch
-        learning_rate=2e-5,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=16,
-        num_train_epochs=12,
-        weight_decay=0.01,
-        save_total_limit=2
+        learning_rate=config.get('learning_rate', 5e-5),
+        per_device_train_batch_size=config.get('per_device_train_batch_size', 16),
+        per_device_eval_batch_size=8,
+        num_train_epochs=config.get('epochs', 10),
+        weight_decay=config.get('weight_decay', 0),
+        max_grad_norm=config.get('max_grad_norm', 0.99),
+        save_total_limit=2,
+        run_name=wandb.run.name,
+        report_to="wandb",
+        logging_dir="logs",
+        auto_find_batch_size=True,
+        lr_scheduler_type="constant",
     )
     
     return training_args
 
 
-def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
+def build_trainer(model, tokenizer, tokenized_datasets, config) -> Trainer:
     """
     Build and return the trainer object for training and evaluation.
 
@@ -111,7 +101,7 @@ def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
     """
     data_collator = DataCollatorForTokenClassification(tokenizer=tokenizer)
 
-    training_args: TrainingArguments = create_training_arguments()
+    training_args: TrainingArguments = create_training_arguments(config)
 
     return NERTrainer(
         model=model,
@@ -120,7 +110,5 @@ def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
         eval_dataset=tokenized_datasets["validation"],
         data_collator=data_collator,
         compute_metrics=compute_metrics,
-        processing_class=tokenizer,
-        wandb=True,
-        run_name="NER-Training"
+        processing_class=tokenizer
     )

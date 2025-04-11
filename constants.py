@@ -1,5 +1,6 @@
 SEED = 42  # Random seed for reproducibility
 MODEL_CHECKPOINT = "google-bert/bert-base-cased"  # Configurable model checkpoint
+# MODEL_CHECKPOINT = "dslim/bert-base-NER"  # Configurable model checkpoint
 OUTPUT_DIR = "checkpoints"  # Configurable output directory
 
 LABEL_TO_ID = {

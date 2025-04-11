@@ -57,7 +57,6 @@ def tokenize_and_align_labels(examples: dict, tokenizer) -> dict:
     """
     tokenized_inputs = tokenizer(
         examples["tokens"],
-        truncation=True,
         is_split_into_words=True,
     )
     all_labels = examples["ner_tags"]

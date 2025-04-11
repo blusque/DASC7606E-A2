@@ -36,7 +36,7 @@ def compute_metrics(eval_predictions: EvalPrediction) -> dict[str, float]:
         for (prediction, label) in zip(predictions, labels)
     ]
     
-    results = metric_evaluator.compute(predictions=true_predictions, references=true_labels)
+    results = metric_evaluator.compute(predictions=true_predictions, references=true_labels, zero_division=0)
     return {
         "precision": results["overall_precision"],
         "recall": results["overall_recall"],
