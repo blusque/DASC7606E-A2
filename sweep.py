@@ -6,14 +6,13 @@ from tokenizer import initialize_tokenizer
 from trainer import build_trainer
 from utils import not_change_test_dataset, set_random_seeds
 
-from test import test_dataset
-
 import wandb
 
 # os.environ["WANDB_DISABLED"] = "true"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 sweep_config = {
     'method': 'random',
@@ -35,22 +34,29 @@ parameters_dict = {
     },
     'bert_checkpoint': {
         'values': [
-            "google-bert/bert-base-cased",
-            "dslim/bert-base-NER",
-            "dslim/bert-large-NER",
-            "dslim/distilbert-NER",
-            "Babelscape/wikineural-multilingual-ner"
+            "Babelscape/wikineural-multilingual-ner",
+            "FacebookAI/xlm-roberta-large",
+            "Tirendaz/multilingual-xlm-roberta-for-ner",
+            "SIRIS-Lab/affilgood-NER-multilingual"
         ]
     },
     'learning_rate': {
         'distribution': 'uniform',
-        'min': 5e-6,
+        'min': 4e-6,
         'max': 5e-5
+    },
+    'lr_scheduler_type': {
+        'values': ['constant', 'linear', 'cosine']
     },
     'max_grad_norm': {
         'distribution': 'uniform',
         'min': 0.01,
-        'max': 0.99
+        'max': 1.0
+    },
+    'warmup_ratio': {
+        'distribution': 'uniform',
+        'min': 0.01,
+        'max': 0.1
     },
     'weight_decay': {
         'distribution': 'uniform',
@@ -88,10 +94,10 @@ def sweep_train(config=None):
         set_random_seeds()
 
         # Initialize tokenizer and model
-        model = initialize_model(config['use_bilstm'], config['use_crf'], config['dropout_rate'])
+        model = initialize_model(config)
 
         # Initialize tokenizer
-        tokenizer = initialize_tokenizer()
+        tokenizer = initialize_tokenizer(config)
 
         raw_datasets = build_dataset()
 

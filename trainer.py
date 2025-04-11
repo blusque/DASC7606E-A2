@@ -70,18 +70,19 @@ def create_training_arguments(config) -> TrainingArguments:
         push_to_hub=False,
         eval_strategy="epoch",
         save_strategy="epoch",  # Save the model every epoch
+        # eval_steps=1,
         learning_rate=config.get('learning_rate', 5e-5),
+        lr_scheduler_type=config.get('lr_scheduler_type', 'constant'),
         per_device_train_batch_size=config.get('per_device_train_batch_size', 16),
         per_device_eval_batch_size=8,
         num_train_epochs=config.get('epochs', 10),
         weight_decay=config.get('weight_decay', 0),
-        max_grad_norm=config.get('max_grad_norm', 0.99),
+        # max_grad_norm=config.get('max_grad_norm', 0.99),
         save_total_limit=2,
         run_name=wandb.run.name,
         report_to="wandb",
         logging_dir="logs",
         auto_find_batch_size=True,
-        lr_scheduler_type="constant",
     )
     
     return training_args

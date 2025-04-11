@@ -76,7 +76,7 @@ class BertForNER(nn.Module):
         super().train(mode)
         self.is_eval = False
 
-    def forward(self, input_ids, attention_mask, token_type_ids, position_ids=None, head_mask=None, labels=None):
+    def forward(self, input_ids, attention_mask, token_type_ids=None, position_ids=None, head_mask=None, labels=None):
         outputs = self.bert(
             input_ids, 
             attention_mask=attention_mask, 
@@ -106,7 +106,10 @@ class BertForNER(nn.Module):
                 mask = (labels[:, 1:] != -100).to(logits.device)
                 crf_result = self.crf.decode(logits[:, 1:], mask=mask)
                 logits[:, 1:] = torch.zeros_like(logits[:, 1:]).to(logits.device)
-                logits[torch.arange(logits.size(0)).unsqueeze(1), torch.arange(1, logits.size(1)).unsqueeze(0), crf_result] = 1
+                for i in range(len(crf_result)):
+                    for j in range(len(crf_result[i])):
+                        logits[i, j + 1, crf_result[i][j]] = 1
+                # logits[torch.arange(logits.size(0)).unsqueeze(1), torch.arange(1, logits.size(1) - 1).unsqueeze(0), crf_result] = 1
 
         return TokenClassifierOutput(loss=loss, logits=logits)
 
