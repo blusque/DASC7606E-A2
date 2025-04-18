@@ -83,6 +83,7 @@ def create_training_arguments(config) -> TrainingArguments:
         report_to="wandb",
         logging_dir="logs",
         auto_find_batch_size=True,
+        torch_empty_cache_steps=1,
     )
     
     return training_args

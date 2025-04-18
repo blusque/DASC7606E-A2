@@ -9,76 +9,61 @@ from utils import not_change_test_dataset, set_random_seeds
 import wandb
 
 # os.environ["WANDB_DISABLED"] = "true"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 # os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 sweep_config = {
-    'method': 'random',
+    'method': 'grid',
     'metric': {
-        'name': 'eval/f1',
+        'name': 'test_f1',
         'goal': 'maximize'
     },
     'early_terminate': {
         'type': 'hyperband',
         'min_iter': 3,
-        's': 2,
+        's': 1,
         'eta': 3
     }
 }
 
 parameters_dict = {
     'epochs': {
-        'values': [10]
+        'values': [ 3, 6, 9, 12 ]
     },
     'bert_checkpoint': {
-        'values': [
-            "Babelscape/wikineural-multilingual-ner",
-            "FacebookAI/xlm-roberta-large",
-            "Tirendaz/multilingual-xlm-roberta-for-ner",
-            "SIRIS-Lab/affilgood-NER-multilingual"
-        ]
+        'values': [ "Tirendaz/multilingual-xlm-roberta-for-ner" ]
     },
     'learning_rate': {
-        'distribution': 'uniform',
-        'min': 4e-6,
-        'max': 5e-5
+        'values': [ 2e-5 ]
     },
     'lr_scheduler_type': {
-        'values': ['constant', 'linear', 'cosine']
+        'values': [ 'linear' ]
     },
     'max_grad_norm': {
-        'distribution': 'uniform',
-        'min': 0.01,
-        'max': 1.0
+        'values': [ 1.0 ]
     },
     'warmup_ratio': {
-        'distribution': 'uniform',
-        'min': 0.01,
-        'max': 0.1
+        'values': [ 0.1 ],
     },
     'weight_decay': {
-        'distribution': 'uniform',
-        'min': 0,
-        'max': 0.1
+        'values': [ 0.05 ]
     },
     'per_device_train_batch_size': {
-        'values': [8, 16, 32]
+        'values': [ 16 ],
     },
     'use_bilstm': {
-        'values': [True, False]
+        'values': [ True ]
     },
     'use_crf': {
-        'values': [True, False]
+        'values': [ True ]
     },
     'bert_layers': {
-        'values': [2, 4, 6, 8, 10, 12]
+        'values': [ 10, 12 ]
     },
     'dropout_rate': {
-        'distribution': 'uniform',
-        'min': 0,
-        'max': 0.5
+        'values': [ 0.1 ]
     }
 }
 
@@ -115,13 +100,23 @@ def sweep_train(config=None):
         )
         trainer.train()
 
+        # Evaluate the model on the test dataset
+        test_metrics = trainer.evaluate(
+            eval_dataset=tokenized_datasets["test"],
+            metric_key_prefix="test",
+        )
+
+        print("Test Metrics:", test_metrics)
+        wandb.log(test_metrics)
+        wandb.finish()
+
 def main():
     """
     Main function to execute model training and evaluation.
     """
     # Build and train the model
     sweep_id = wandb.sweep(sweep_config, project="ner")
-    wandb.agent(sweep_id, function=sweep_train, count=50)
+    wandb.agent(sweep_id, function=sweep_train, count=12)
     # # Evaluate the model on the test dataset
     # test_metrics = trainer.evaluate(
     #     eval_dataset=tokenized_datasets["test"],
