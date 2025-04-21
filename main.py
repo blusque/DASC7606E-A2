@@ -13,16 +13,17 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 wandb_args = {
     'project': 'ner',
     'name': 'ner-bert',
     'config': {
-        'epochs': 8,
+        'epochs': 6,
         'bert_checkpoint': "Tirendaz/multilingual-xlm-roberta-for-ner",
-        'learning_rate': 5e-5,
+        'learning_rate': 2e-5,
         'max_grad_norm': 0.99,
-        'weight_decay': 0.1,
+        'weight_decay': 0.01,
         'per_device_train_batch_size': 16,
         'use_bilstm': True,
         'use_crf': True,
@@ -60,6 +61,13 @@ def main():
             tokenized_datasets=tokenized_datasets,
             config=config,
         )
+
+        test_metrics = trainer.evaluate(
+            eval_dataset=tokenized_datasets["test"],
+            metric_key_prefix="test",
+        )
+        wandb.log(test_metrics)
+
         trainer.train()
 
         # Evaluate the model on the test dataset

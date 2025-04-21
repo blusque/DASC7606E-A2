@@ -72,7 +72,7 @@ def create_training_arguments(config) -> TrainingArguments:
         save_strategy="epoch",  # Save the model every epoch
         # eval_steps=1,
         learning_rate=config.get('learning_rate', 5e-5),
-        lr_scheduler_type=config.get('lr_scheduler_type', 'constant'),
+        lr_scheduler_type=config.get('lr_scheduler_type', 'linear'),
         per_device_train_batch_size=config.get('per_device_train_batch_size', 16),
         per_device_eval_batch_size=8,
         num_train_epochs=config.get('epochs', 10),
